@@ -119,8 +119,8 @@ class VariantLink( object ):
             self.makeVarLink(obj)
 #            self.fillVarProperties(obj)
             obj.SourceObject.recompute
-            self.restoreVarExpression(obj)
-            self.execute(obj)
+#            self.restoreVarExpression(obj)
+#            self.execute(obj)
             obj.Type='Asm4::VariantLink'
             obj.recompute()
 
@@ -153,8 +153,10 @@ class VariantLink( object ):
         def recurse(expr):
             nonlocal found
             if ('varTmpDoc' in expr):
-                strParts = exprString.split('varTmpDoc',1)
+                strParts = expr.split('varTmpDoc',1)
+                print(expr)
                 strParts[1] = strParts[1].split("#",1)[1]
+                print(strParts[0]+" - "+strParts[1])
                 expr = strParts[0]+ obj.LinkedObject.Document.Name + "#" + recurse(strParts[1])
                 found = True
             return expr
