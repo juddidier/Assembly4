@@ -304,15 +304,20 @@ class placeLinkUI():
     def Apply( self ):
         # get the instance to attach to:
         # it's either the top level assembly or a sister App::Link
+        a_Variant = False                                                           #DJ
         if self.parentList.currentText() == 'Parent Assembly':
             a_Link = 'Parent Assembly'
             a_Part = None
         elif self.parentList.currentIndex() > 1:
             parent = self.parentTable[ self.parentList.currentIndex() ]
             a_Link = parent.Name
+            print(str(parent.TypeId)+" - "+str(getattr(parent,'Type'))+" - "+str(hasattr(parent,'Type')))
             if parent.TypeId=='App::Part':                                          #
                 a_Part = parent.Document.Name                                       #
-            else:                                                                   #
+            elif parent.TypeId=='Part::FeaturePython' and hasattr(parent,'Type') and getattr(parent,'Type')=='Asm4::VariantLink':        #DJ
+                a_Part = parent.Name                                                #DJ
+                a_Variant = True                                                    #DJ
+            else:
                 a_Part = parent.LinkedObject.Document.Name
         else:
             a_Link = None
@@ -326,8 +331,13 @@ class placeLinkUI():
             a_LCS = None
 
         # the linked App::Part's name
+        print(str(self.selectedObj.TypeId)+" - "+str(getattr(self.selectedObj, 'Type'))+" - "+self.selectedObj.Name)
+        l_Variant = False                                                           #DJ
         if self.selectedObj.TypeId=='App::Part':                                    #
             l_Part = self.selectedObj.Document.Name                                 #
+        elif self.selectedObj.TypeId=='Part::FeaturePython' and hasattr(self.selectedObj, 'Type') and getattr(self.selectedObj, 'Type')=='Asm4::VariantLink':         #DJ
+            l_Part = self.selectedObj.Name                                          #DJ
+            l_Variant = True                                                        #DJ
         else:                                                                       #
             l_Part = self.selectedObj.LinkedObject.Document.Name
 
@@ -348,6 +358,7 @@ class placeLinkUI():
             self.selectedObj.AttachedBy = '#'+l_LCS
             self.selectedObj.AttachedTo = a_Link+'#'+a_LCS
             self.selectedObj.SolverId = 'Asm4EE'
+            print(a_Link+" - "+a_Part+" - "+a_LCS+" - "+l_Part+" - "+l_LCS)
             # build the expression for the ExpressionEngine
             # this is where all the magic is, see:
             # 
@@ -358,7 +369,8 @@ class placeLinkUI():
             #
             # expr = ParentLink.Placement * ParentPart#LCS.Placement * constr_LinkName.AttachmentOffset * LinkedPart#LCS.Placement ^ -1'			
             # expr = LCS_in_the_assembly.Placement * constr_LinkName.AttachmentOffset * LinkedPart#LCS.Placement ^ -1'			
-            expr = Asm4.makeExpressionPart( a_Link, a_Part, a_LCS, l_Part, l_LCS )
+#DJ            expr = Asm4.makeExpressionPart( a_Link, a_Part, a_LCS, l_Part, l_LCS)
+            expr = Asm4.makeExpressionPart( a_Link, a_Part, a_LCS, l_Part, l_LCS , a_Variant, l_Variant)    #DJ
             # load the expression into the link's Expression Engine
             self.selectedObj.setExpression('Placement', expr )
             # recompute the object to apply the placement:

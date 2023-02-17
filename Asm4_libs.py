@@ -587,7 +587,8 @@ def labelName( obj ):
     |         populate the ExpressionEngine         |
     +-----------------------------------------------+
 """
-def makeExpressionPart( attLink, attDoc, attLCS, linkedDoc, linkLCS ):
+#DJdef makeExpressionPart( attLink, attDoc, attLCS, linkedDoc, linkLCS ):
+def makeExpressionPart( attLink, attDoc, attLCS, linkedDoc, linkLCS , attVariant=False, linkVariant=False):
     # if everything is defined
     if attLink and attLCS and linkedDoc and linkLCS:
         # this is where all the magic is, see:
@@ -600,11 +601,23 @@ def makeExpressionPart( attLink, attDoc, attLCS, linkedDoc, linkLCS ):
         # expr = LCS_in_the_assembly.Placement * constr_LinkName.AttachmentOffset * LinkedPart#LCS.Placement ^ -1
         # the AttachmentOffset is now a property of the App::Link
         # expr = LCS_in_the_assembly.Placement * AttachmentOffset * LinkedPart#LCS.Placement ^ -1
-        expr = attLCS+'.Placement * AttachmentOffset * '+linkedDoc+'#'+linkLCS+'.Placement ^ -1'
-        # if we're attached to another sister part (and not the Parent Assembly)
-        # we need to take into account the Placement of that Part.
-        if attDoc:
-            expr = attLink+'.Placement * '+attDoc+'#'+expr
+        expr = ''                                                                                           #DJ
+        if attVariant:                                                                                      #DJ
+            expr = attLink+'.Placement * <<'+attDoc+'>>.<<'+attLCS+'.>>.Placement * AttachmentOffset * '    #DJ
+        else:                                                                                               #DJ
+            if attDoc:                                                                                      #DJ
+                expr = attLink+'.Placement * '+attDoc+'#'                                                   #DJ
+            expr = expr + attLCS+'.Placement * AttachmentOffset * '                                         #DJ
+        
+        if linkVariant:                                                                                     #DJ
+            expr = expr +'<<'+linkedDoc+'>>.<<'+linkLCS+'.>>.Placement ^ -1'                                #DJ
+        else:                                                                                               #DJ
+            expr = expr + linkedDoc+'#'+linkLCS+'.Placement ^ -1'                                           #DJ
+#DJ        expr = attLCS+'.Placement * AttachmentOffset * '+linkedDoc+'#'+linkLCS+'.Placement ^ -1'
+#DJ        # if we're attached to another sister part (and not the Parent Assembly)
+#DJ        # we need to take into account the Placement of that Part.
+#DJ        if attDoc:
+#DJ            expr = attLink+'.Placement * '+attDoc+'#'+expr
     else:
         expr = False
     return expr

@@ -204,7 +204,8 @@ class VariantLink( object ):
                                 if str(prop) in exprItem[0]:
 #                                    print("prop in exprItem[0]")
                                     # write the expression to destination
-                                    exprString = obj.LinkedObject.Document.Name+"#"+exprItem[1]
+#DJ                                    exprString = obj.LinkedObject.Document.Name+"#"+exprItem[1]
+                                    exprString = obj.SourceObject.Document.Name+"#"+exprItem[1]
 #                                    print(exprString)
                                     obj.setExpression(exprItem[0], exprString)
                                     found = True
