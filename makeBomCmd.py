@@ -113,7 +113,7 @@ class makeBOM:
             print("ASM4> BOM following sub-assemblies")
         else:
             print("ASM4> BOM local parts only")
-
+        
         self.listParts(self.model)
         self.inSpreadsheet()
         self.BOM.setPlainText(self.Verbose)
@@ -152,12 +152,17 @@ class makeBOM:
 
         if self.PartsList == None:
             self.PartsList = {}
+        
+        if hasattr(obj, 'Type'):
+            objType = getattr(obj, 'Type')
+        else:
+            objType = "none"
 
-        print("ASM4> {level}{obj_typeid} | {obj_name} | {obj_label}".format(level=self.indent(level), obj_label=obj.Label, obj_name=obj.FullName, obj_typeid=obj.TypeId))
+        print("ASM4> {level}{obj_typeid} | {obj_name} | {obj_label} | {obj_type}".format(level=self.indent(level), obj_label=obj.Label, obj_name=obj.FullName, obj_typeid=obj.TypeId, obj_type=objType))
         Gui.updateGui()
 
-        if obj.TypeId=='App::Part' or isVariantLink(obj) or isFastener(obj):
-            if level > 0 and not isAssembly(obj):
+        if (obj.TypeId=='App::Part') or isVariantLink(obj) or isFastener(obj):
+            if (level > 0) and not isAssembly(obj):
                 # write PartsList
                 # test if the part already exist on PartsList
                 try:
@@ -205,12 +210,10 @@ class makeBOM:
                 self.listParts(subobj, level, parent=obj)
 
         # Navigate on objects inide a ASM4 Part (Links and Folders)
-#        if obj.TypeId == 'App::Part' or obj.TypeId== 'Part::FeaturePython':
-        if obj.TypeId == 'App:Part' or isVariantLink:
+        if obj.TypeId == 'App::Part' and hasattr(obj, 'Type') and getattr(obj, 'Type')=='Assembly':# or isVariantLink(obj):
+            print(str(obj.getSubObjects()))
             for objname in obj.getSubObjects():
                 subobj = obj.Document.getObject(objname[0:-1])
-#                print(str(objname[0:-1])+" - "+str(objname)+" - "+str(subobj))
-                # if subobj.TypeId == 'App::Link' or subobj.TypeId == 'App::DocumentObjectGroup':
                 self.listParts(subobj, level+1, parent=obj)
 
         return
