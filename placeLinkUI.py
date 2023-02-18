@@ -311,7 +311,7 @@ class placeLinkUI():
         elif self.parentList.currentIndex() > 1:
             parent = self.parentTable[ self.parentList.currentIndex() ]
             a_Link = parent.Name
-            print(str(parent.TypeId)+" - "+str(getattr(parent,'Type'))+" - "+str(hasattr(parent,'Type')))
+#            print(str(parent.TypeId)+" - "+str(getattr(parent,'Type'))+" - "+str(hasattr(parent,'Type')))
             if parent.TypeId=='App::Part':                                          #
                 a_Part = parent.Document.Name                                       #
             elif parent.TypeId=='Part::FeaturePython' and hasattr(parent,'Type') and getattr(parent,'Type')=='Asm4::VariantLink':        #DJ
@@ -331,12 +331,12 @@ class placeLinkUI():
             a_LCS = None
 
         # the linked App::Part's name
-        print(str(self.selectedObj.TypeId)+" - "+str(getattr(self.selectedObj, 'Type'))+" - "+self.selectedObj.Name)
+#        print(str(self.selectedObj.TypeId)+" - "+str(getattr(self.selectedObj, 'Type'))+" - "+getattr(self.selectedObj, 'Label'))#.Name)
         l_Variant = False                                                           #DJ
         if self.selectedObj.TypeId=='App::Part':                                    #
             l_Part = self.selectedObj.Document.Name                                 #
         elif self.selectedObj.TypeId=='Part::FeaturePython' and hasattr(self.selectedObj, 'Type') and getattr(self.selectedObj, 'Type')=='Asm4::VariantLink':         #DJ
-            l_Part = self.selectedObj.Name                                          #DJ
+            l_Part = getattr(self.selectedObj, 'Label')                             #DJ
             l_Variant = True                                                        #DJ
         else:                                                                       #
             l_Part = self.selectedObj.LinkedObject.Document.Name
@@ -358,7 +358,7 @@ class placeLinkUI():
             self.selectedObj.AttachedBy = '#'+l_LCS
             self.selectedObj.AttachedTo = a_Link+'#'+a_LCS
             self.selectedObj.SolverId = 'Asm4EE'
-            print(a_Link+" - "+a_Part+" - "+a_LCS+" - "+l_Part+" - "+l_LCS)
+#            print(a_Link+" - "+a_Part+" - "+a_LCS+" - "+l_Part+" - "+l_LCS)
             # build the expression for the ExpressionEngine
             # this is where all the magic is, see:
             # 
