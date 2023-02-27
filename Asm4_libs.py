@@ -603,7 +603,7 @@ def makeExpressionPart( attLink, attDoc, attLCS, linkedDoc, linkLCS , attVariant
         # expr = LCS_in_the_assembly.Placement * AttachmentOffset * LinkedPart#LCS.Placement ^ -1
         expr = ''                                                                                           #DJ
         if attVariant:                                                                                      #DJ
-            expr = attLink+'.Placement * <<'+attDoc+'>>.<<'+attLCS+'.>>.Placement * AttachmentOffset * '    #DJ
+            expr = '<<'+attDoc+'>>.Placement * <<'+attDoc+'>>.<<'+attLCS+'.>>.Placement * AttachmentOffset * '    #DJ
         else:                                                                                               #DJ
             if attDoc:                                                                                      #DJ
                 expr = attLink+'.Placement * '+attDoc+'#'                                                   #DJ

@@ -37,6 +37,7 @@ class updateAssembly:
     """
     def Activated(self):
         # find every Part in the document ...
+        print(App.ActiveDocument.Objects)
         for obj in App.ActiveDocument.Objects:
             # ... and update it
             if obj.TypeId == 'App::Part':

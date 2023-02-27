@@ -5,6 +5,7 @@
 
 
 import os
+import time
 
 from PySide import QtGui, QtCore
 import FreeCADGui as Gui
@@ -64,42 +65,50 @@ class VariantLink( object ):
 
     # triggered in recompute(), update variant parameters
     def execute(self, obj):
+        st = time.time()
+#        print('execute() '+obj.Name)
+#        Gui.updateGui()
         # should be a copy of the one of the SourceObject
         if obj.LinkedObject is not None and obj.LinkedObject.isValid():
-#            print("linkedObj :"+str(obj.LinkedObject)+"\n")
             # get the Variables container of the LinkedObject
             variantVariables = obj.LinkedObject.getObject('Variables')
             if variantVariables is not None:
                 # parse all variant variables and apply them to the linked object
-                variantProps = obj.PropertiesList
                 sourceProps = variantVariables.PropertiesList
-                for prop in variantProps:
+                
+                for prop in sourceProps:
                     try:
-#                        print(str(prop)+": ")
-                        if prop in sourceProps and obj.getGroupOfProperty(prop) == 'VariantVariables':
-                            setattr( variantVariables, prop, getattr( obj, prop ))
-#                        print("success\n")
+                        if obj.getGroupOfProperty(prop) == 'VariantVariables':
+                            setattr(variantVariables, prop, getattr(obj, prop))
                     except:
-#                        print("failed")
                         pass
-                        
+                
+#                for prop in variantProps:
+#                    try:
+#                        if prop in sourceProps and obj.getGroupOfProperty(prop) == 'VariantVariables':
+#                            setattr( variantVariables, prop, getattr( obj, prop ))
+#                    except:
+#                        pass
                 variantVariables.recompute()
                 obj.LinkedObject.recompute()
                 obj.LinkedObject.Document.recompute()
         elif obj.SourceObject is not None and obj.SourceObject.isValid():
-#            print("sourcObj :"+str(obj)+"\n")
             self.makeVarLink(obj)
             self.fillVarProperties(obj)
+        
+        print('execute() ', (time.time() - st),' - ', obj.Name)
 
     # do the actual variant: this creates a new hidden temporary document
     # deep-copies the source object there, and re-links the copy
     def makeVarLink(self, obj):
+#        print('makeVarLink() '+obj.Name)
+#        Gui.updateGui()
         # create a new, empty, hidden, temporary document
         tmpDocName = 'varTmpDoc_'
         i = 1
-        while i<100 and tmpDocName+str(i) in App.listDocuments():
+        while i<1000 and tmpDocName+str(i) in App.listDocuments():
             i += 1
-        if i<100:
+        if i<1000:
             tmpDocName = 'varTmpDoc_'+str(i)
             tmpDoc = App.newDocument( tmpDocName, hidden=True, temp=True )
             # deep-copy the source object and link it back
@@ -110,6 +119,8 @@ class VariantLink( object ):
 
     # Python API called after the document is restored
     def onDocumentRestored(self, obj):
+#        print('onDocumentRestored() '+obj.Name)
+#        Gui.updateGui()
         # this sets up the link infrastructure
         self.linkSetup(obj)
         # restore the variant
@@ -118,16 +129,18 @@ class VariantLink( object ):
             # update obj
             self.makeVarLink(obj)
 #            self.fillVarProperties(obj)
-            obj.SourceObject.recompute
+#            obj.SourceObject.recompute
 #            self.restoreVarExpression(obj)
-#            self.execute(obj)
+            self.execute(obj)
             obj.Type='Asm4::VariantLink'
-            obj.recompute()
+#            obj.recompute()
 
     # make the Asm4EE according to the properties stored in the varLink object
     # this is necessary because the placement refers to the LinkedObject's document *name*,
     # which is a temporary document, and this document may be different on restore
     def restorePlacementEE( self, obj ):
+#        print('restorePlacementEE() '+obj.Name)
+#        Gui.updateGui()
         # only attempt this on fully restored objects
         if self.isLoaded(obj) and obj.LinkedObject.isValid():
             # if it's indeed an Asm4 object
@@ -148,7 +161,8 @@ class VariantLink( object ):
 
     # find "varTmpDoc" in ExpressionEngine and update its index if needed
     def restoreVarExpression(self, obj):
-#        print ("restoreVarExpression")
+#        print('restoreVarExpression() '+obj.Name)
+#        Gui.updateGui()
         found = False
         def recurse(expr):
             nonlocal found
@@ -177,6 +191,8 @@ class VariantLink( object ):
     # find all 'Variables' in the original part, 
     # and create corresponding properties in the variant
     def fillVarProperties(self,obj):
+#        print('fillVarProperties() '+obj.Name)
+#        Gui.updateGui()
 #        print("fillVarProperties()")
         variables = obj.SourceObject.getObject('Variables')
 #        print("obj :"+str(obj)+" : "+obj.Label)
@@ -223,6 +239,8 @@ class VariantLink( object ):
 
     # new Python API called when the object is newly created
     def attach(self,obj):
+#        print('attach() '+obj.Name)
+#        Gui.updateGui()
         FCC.PrintMessage('Attaching VariantLink ...\n')
         # the source object for the variant object
         obj.addProperty("App::PropertyXLink","SourceObject"," Link",
@@ -237,6 +255,8 @@ class VariantLink( object ):
 
     # helper function for both initialization (attach()) and restore (onDocumentRestored())
     def linkSetup(self,obj):
+#        print('linkSetup() '+obj.Name)
+#        Gui.updateGui()
         assert getattr(obj,'Proxy',None)==self
         self.Object = obj
         # Tell LinkExtension which additional properties are available.
@@ -252,6 +272,8 @@ class VariantLink( object ):
 
     # Execute when a property changes.
     def onChanged(self, obj, prop):
+#        print('onChanged() '+obj.Name)
+#        Gui.updateGui()
         # check that the SourceObject is valid, this should ensure
         # that the object has been successfully loaded
         if self.isLoaded(obj):

@@ -14,7 +14,7 @@ from FreeCAD import Console as FCC
 import Asm4_libs as Asm4
 from placePartUI import placePartUI
 import selectionFilter
-
+from datetime import datetime
 
 
 
@@ -315,7 +315,7 @@ class placeLinkUI():
             if parent.TypeId=='App::Part':                                          #
                 a_Part = parent.Document.Name                                       #
             elif parent.TypeId=='Part::FeaturePython' and hasattr(parent,'Type') and getattr(parent,'Type')=='Asm4::VariantLink':        #DJ
-                a_Part = parent.Name                                                #DJ
+                a_Part = getattr(parent, 'Label')                                   #DJ
                 a_Variant = True                                                    #DJ
             else:
                 a_Part = parent.LinkedObject.Document.Name
