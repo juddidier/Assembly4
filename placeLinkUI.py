@@ -156,7 +156,7 @@ class placeLinkUI():
             if hasattr(obj, 'Type'):                                                                                                     #
                 if 'VariantLink' in getattr(obj, 'Type'):                                                                                #
                     self.parentTable.append(obj)                                                                                         #
-                    objIcon = obj.LinkedObject.ViewObject.Icon                                                                                  #
+                    objIcon = obj.LinkedObject.ViewObject.Icon                                                                           #
                     objText = Asm4.labelName(obj)                                                                                        #
                     self.parentList.addItem(objIcon, objText, obj)                                                                       #
 
@@ -331,7 +331,7 @@ class placeLinkUI():
             a_LCS = None
 
         # the linked App::Part's name
-#        print(str(self.selectedObj.TypeId)+" - "+str(getattr(self.selectedObj, 'Type'))+" - "+getattr(self.selectedObj, 'Label'))#.Name)
+        print(str(self.selectedObj.TypeId)+" - "+str(getattr(self.selectedObj, 'Type'))+" - "+getattr(self.selectedObj, 'Label'))#.Name)
         l_Variant = False                                                           #DJ
         if self.selectedObj.TypeId=='App::Part':                                    #
             l_Part = self.selectedObj.Document.Name                                 #

@@ -17,6 +17,7 @@ import Asm4_libs as Asm4
 import infoPartCmd
 import InfoKeys
 from FastenersLib import isFastener
+from BearingLib import isBearing
 
 crea = infoPartCmd.infoPartUI.makePartInfo
 fill = infoPartCmd.infoPartUI.infoDefault
@@ -148,6 +149,7 @@ class makeBOM:
             max_level = 2;
 
         if obj == None:
+            print("obj is None")
             return
 
         if self.PartsList == None:
@@ -158,10 +160,10 @@ class makeBOM:
         else:
             objType = "none"
 
-        print("ASM4> {level}{obj_typeid} | {obj_name} | {obj_label} | {obj_type}".format(level=self.indent(level), obj_label=obj.Label, obj_name=obj.FullName, obj_typeid=obj.TypeId, obj_type=objType))
+        print("ASM4> {level}{obj_typeid} | {obj_name} | {obj_label} | {obj_type}".format(level=self.indent(level), obj_label=obj.Label, obj_name=obj.FullName, obj_typeid=str(obj.TypeId), obj_type=str(objType)))
         Gui.updateGui()
 
-        if (obj.TypeId=='App::Part') or isVariantLink(obj) or isFastener(obj):
+        if (obj.TypeId=='App::Part') or isVariantLink(obj) or isFastener(obj) or isBearing(obj):
             if (level > 0) and not isAssembly(obj):
                 # write PartsList
                 # test if the part already exist on PartsList

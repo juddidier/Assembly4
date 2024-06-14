@@ -2,6 +2,9 @@
 # coding: utf-8
 #
 # placePartUI.py
+#
+# LGPL
+# Copyright HUBERT Zoltán
 
 
 import os
@@ -42,7 +45,11 @@ class placePartUI():
             Asm4.warningBox('Please select ab object with a Placement property')
 
         # check where the fastener was attached to
-        (self.old_Parent, separator, self.old_parentLCS) = self.selectedObj.AttachedTo.partition('#')
+        if hasattr(self.selectedObj,'AttachedTo'):
+            self.old_AttachedTo = self.selectedObj.AttachedTo
+        else:
+            self.old_AttachedTo = None
+        (self.old_Parent, separator, self.old_parentLCS) = self.old_AttachedTo.partition('#')
         # get and store the Placement's current ExpressionEngine:
         self.old_EE = Asm4.placementEE( self.selectedObj.ExpressionEngine )
         if hasattr(self.selectedObj,'AttachmentOffset'):
@@ -54,6 +61,15 @@ class placePartUI():
         self.drawUI()
         self.initUI()
         # now self.parentList and self.parentTable are available
+
+        # decode the old ExpressionEngine
+        # if the decode is unsuccessful, old_Expression is set to False
+        # and old_attPart and old_attLCS are set to 'None'
+        old_Parent = ''
+        old_parentPart = ''
+        old_parentLCS = ''
+        if  self.old_EE and self.old_Parent:
+            ( old_Parent, old_parentPart, old_parentLCS ) = self.splitExpression( self.old_EE, self.old_Parent )
 
         # find all the linked parts in the assembly
         for obj in self.activeDoc.findObjects("App::Link"):
@@ -67,14 +83,20 @@ class placePartUI():
                     objText = Asm4.labelName(obj)
                     self.parentList.addItem( objIcon, objText, obj)
 
-        # decode the old ExpressionEngine
-        # if the decode is unsuccessful, old_Expression is set to False
-        # and old_attPart and old_attLCS are set to 'None'
-        old_Parent = ''
-        old_parentPart = ''
-        old_parentLCS = ''
-        if  self.old_EE and self.old_Parent:
-            ( old_Parent, old_parentPart, old_parentLCS ) = self.splitExpression( self.old_EE, self.old_Parent )
+        for obj in self.activeDoc.findObjects("App::Part"):                                                                              #
+            if obj != self.selectedObj:                                                                                                  #
+                self.parentTable.append( obj )                                                                                           #
+                objIcon = obj.ViewObject.Icon                                                                                            #
+                objText = Asm4.labelName(obj)                                                                                            #
+                self.parentList.addItem(objIcon, objText, obj)                                                                           #
+                
+        for obj in self.activeDoc.findObjects("Part::FeaturePython"):                                                                    #
+            if hasattr(obj, 'Type'):                                                                                                     #
+                if 'VariantLink' in getattr(obj, 'Type'):                                                                                #
+                    self.parentTable.append(obj)                                                                                         #
+                    objIcon = obj.LinkedObject.ViewObject.Icon                                                                           #
+                    objText = Asm4.labelName(obj)                                                                                        #
+                    self.parentList.addItem(objIcon, objText, obj)                                                                       #
 
         # find the oldPart in the part list...
         parent_index = 1
@@ -102,7 +124,7 @@ class placePartUI():
         if lcs_found:
             # ... and select it
             self.attLCSlist.setCurrentItem( lcs_found[0] )
-
+        # launch the selection observer
         Gui.Selection.addObserver(self, 0)
 
 
@@ -124,7 +146,11 @@ class placePartUI():
 
     # Cancel
     def reject(self):
+        # remove the  observer
+        Gui.Selection.removeObserver(self)
         # restore previous values if they existed
+        if hasattr(self.selectedObj,'AttachedTo'):
+            self.selectedObj.AttachedTo = self.old_AttachedTo
         if self.old_AO is not None:
             self.selectedObj.AttachmentOffset = self.old_AO
         if self.old_EE is not None:
@@ -133,7 +159,9 @@ class placePartUI():
         # highlight the selected LCS in its new position
         Gui.Selection.clearSelection()
         Gui.Selection.addSelection( self.activeDoc.Name, self.rootAssembly.Name, self.selectedObj.Name +'.')
-        self.finish()
+        # close the Task dialog
+        #self.finish()
+        Gui.Control.closeDialog()
 
 
 
@@ -155,7 +183,12 @@ class placePartUI():
         elif self.parentList.currentIndex() > 1:
             parent = self.parentTable[ self.parentList.currentIndex() ]
             a_Link = parent.Name
-            a_Part = parent.LinkedObject.Document.Name
+            if parent.TypeId == 'App::Part':                                    #
+                a_Part = parent.Document.Name                                   #
+            elif parent.TypeId == 'Part::FeaturePython':                        #
+                a_Part = getattr(parent, 'Label')                               #
+            else:                                                               #
+                a_Part = parent.LinkedObject.Document.Name
         else:
             a_Link = None
             a_Part = None
@@ -170,7 +203,7 @@ class placePartUI():
         # check that all of them have something in
         if a_Link and a_LCS :
             # add Asm4 properties if necessary
-            Asm4.makeAsmProperties( self.selectedObj, reset=True )
+            Asm4.makeAsmProperties( self.selectedObj )
             # hide "offset" and "invert" properties to avoid confusion as they are not used in Asm4
             if hasattr( self.selectedObj, 'offset' ):
                 self.selectedObj.setPropertyStatus('offset', 'Hidden')
@@ -179,12 +212,12 @@ class placePartUI():
 
             # <<LinkName>>.Placement.multiply( <<LinkName>>.<<LCS.>>.Placement )
             # expr = '<<'+ a_Part +'>>.Placement.multiply( <<'+ a_Part +'>>.<<'+ a_LCS +'.>>.Placement )'
-            
+
             Asm4.placeObjectToLCS(self.selectedObj, a_Link, a_Part, a_LCS)
-            
             # highlight the selected fastener in its new position
             Gui.Selection.clearSelection()
             Gui.Selection.addSelection( self.activeDoc.Name, self.rootAssembly.Name, self.selectedObj.Name +'.')
+            self.selectedObj.recompute()
         else:
             FCC.PrintWarning("Problem in selections\n")
         return
@@ -253,7 +286,7 @@ class placePartUI():
         # keep the fastener selected
         Gui.Selection.addSelection( self.activeDoc.Name, self.rootAssembly.Name, self.selectedObj.Name+'.')
         # the current text in the combo-box is the link's name...
-        # ... or it's 'Parent Assembly' then the parent is the 'Model' root App::Part		
+        # ... or it's 'Parent Assembly' then the parent is the 'Model' root App::Part
         if self.parentList.currentText() == 'Parent Assembly':
             parentName = 'Parent Assembly'
             # parentPart = self.activeDoc.getObject( 'Model' )
@@ -267,11 +300,19 @@ class placePartUI():
             parentPart = self.activeDoc.getObject( parentName )
             if parentPart:
                 # we get the LCS from the linked part
-                self.attLCStable = Asm4.getPartLCS( parentPart.LinkedObject )
+                dText = ''
+                if parentPart.TypeId == 'App::Part':
+                    self.attLCStable = Asm4.getPartLCS(parentPart)
+                    if parentPart.Document != self.activeDoc:
+                        dText = parentPart.Document.Name + '#'
+                    pText = Asm4.labelName(parentPart)
+                else:
+                    self.attLCStable = Asm4.getPartLCS( parentPart.LinkedObject )
                 # linked part & doc
-                dText = parentPart.LinkedObject.Document.Name +'#'
+                    if parentPart.LinkedObject.Document != self.activeDoc:
+                        dText = parentPart.LinkedObject.Document.Name +'#'
                 # if the linked part has been renamed by the user
-                pText = Asm4.labelName( parentPart.LinkedObject )
+                    pText = Asm4.labelName( parentPart.LinkedObject )
                 self.parentDoc.setText( dText + pText )
                 # highlight the selected part:
                 Gui.Selection.addSelection( \
@@ -322,7 +363,8 @@ class placePartUI():
     def addSelection(self, doc, obj, sub, pnt):
         selPath = Asm4.getSelectionPath(doc, obj, sub)
         selObj = Gui.Selection.getSelection()[0]
-        if selObj and len(selPath) > 2:
+        # don't trigger if it's the selected object itself
+        if selObj  and  selObj!=self.selectedObj  and  len(selPath)>2:
             selLinkName = selPath[2]
             selLink = App.ActiveDocument.getObject(selLinkName)
             idx = self.parentList.findText(Asm4.labelName(selLink), QtCore.Qt.MatchExactly)
@@ -391,6 +433,7 @@ class placePartUI():
         self.XtranslSpinBox.valueChanged.connect(self.movePart)
         self.YtranslSpinBox.valueChanged.connect(self.movePart)
         self.ZtranslSpinBox.valueChanged.connect(self.movePart)
+        self.attLCSlist.itemClicked.connect( self.onApply )
 
 
 
@@ -475,8 +518,8 @@ class placePartUI():
         # Actions
         self.parentList.currentIndexChanged.connect( self.onParentList )
         self.parentList.activated.connect( self.onParentList )
-        ##self.attLCSlist.itemClicked.connect( self.onDatumClicked )
-        self.attLCSlist.itemClicked.connect( self.onApply )
+        #self.attLCSlist.itemClicked.connect( self.onDatumClicked )
+        #self.attLCSlist.itemClicked.connect( self.onApply )
         self.RotXButton.clicked.connect( self.onRotX )
         self.RotYButton.clicked.connect( self.onRotY )
         self.RotZButton.clicked.connect( self.onRotZ)
