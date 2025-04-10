@@ -19,6 +19,8 @@ import InfoKeys
 from FastenersLib import isFastener
 from BearingLib import isBearing
 
+from collections import OrderedDict
+
 crea = infoPartCmd.infoPartUI.makePartInfo
 fill = infoPartCmd.infoPartUI.infoDefault
 
@@ -245,7 +247,6 @@ class makeBOM:
 
         spreadsheet.clearAll()
 
-
         # Write rows in the spreadsheet
         def wrow(drow: [str], row: int):
             for i, d in enumerate(drow):
@@ -254,7 +255,9 @@ class makeBOM:
                 else:
                     spreadsheet.set(str(chr(ord('a') + i)).upper() + str(row + 1), str(d))
 
-        data = list(plist.values()) # present data in the order it is in the Object tree
+#        print(list(plist.values()))
+        data = list(OrderedDict(sorted(plist.items())).values()) # present data in the order it is in the Object tree
+#        print(OrderedDict(sorted(plist.items())))
 
         wrow(data[0].keys(), 0)
         for i, _ in enumerate(data):
